@@ -10,8 +10,7 @@ public class P2DPlayerController : MonoBehaviour
     // Controller status
     [Header("Controller Status")]
     public bool enableControl = true;
-    public float Peak_y;
-    public float LastForce_y;
+    public AnimationCurve jumpCurve;
 
     // Component references 
     [Header("Component")]
@@ -29,6 +28,7 @@ public class P2DPlayerController : MonoBehaviour
     public float jumpForce = 20f;
 
     [Space]
+    public bool jumpBtnDown = false;
     public bool enableHoldJump = false;
     public float jumpHoldForce = 5f;
     public float maxJumpHoldDuration = 0.2f;
@@ -60,7 +60,6 @@ public class P2DPlayerController : MonoBehaviour
     {
         isGrounded = false;
         jumpHoldTimer = maxJumpHoldDuration;
-        Peak_y = 0;
     }
 
     private void Update()
@@ -71,13 +70,20 @@ public class P2DPlayerController : MonoBehaviour
         MoveHandler();
         JumpHandler();
 
-        Peak_y = Mathf.Max(Peak_y, transform.position.y);
-
     }
 
     private void FixedUpdate()
     {
-        
+        if (!jumpBtnDown && !isJumping) { return; }
+        if (jumpHoldTimer > 0f)
+        {
+            rb.AddForce(new Vector2(rb.velocity.x, jumpHoldForce), ForceMode2D.Force);
+            jumpHoldTimer -= Time.deltaTime;
+        }
+        else
+        {
+            isJumping = false;
+        }
     }
 
     private void InputHandler()
@@ -108,7 +114,6 @@ public class P2DPlayerController : MonoBehaviour
         // Handle basic jump input
         if (isGrounded && Input.GetButtonDown("Jump"))
         {
-            rb.velocity = new Vector2(rb.velocity.x, 0);
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
             jumpCount++;
 
@@ -121,20 +126,11 @@ public class P2DPlayerController : MonoBehaviour
         // Handle hold jump input
         if (enableHoldJump && Input.GetButton("Jump") && isJumping)
         {
-            if (jumpHoldTimer > 0f)
-            {
-                LastForce_y = -4;
-                rb.AddForce(new Vector2(rb.velocity.x, jumpHoldForce), ForceMode2D.Impulse);
-                jumpHoldTimer -= Time.deltaTime;
-            }
-            else
-            {
-                isJumping = false;
-                LastForce_y = Mathf.Max(LastForce_y, transform.position.y);
-            }
+            jumpBtnDown = true;
         }
         if (Input.GetButtonUp("Jump"))
         {
+            jumpBtnDown = false;
             isJumping = false;
         }
     }
