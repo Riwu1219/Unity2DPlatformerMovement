@@ -50,8 +50,10 @@ public class P2DPlayerController : MonoBehaviour
 
     private void Start()
     {
+        Application.targetFrameRate = 60;
         // Auto assign Rigidbody2D if not set
         if (rb == null) { rb = GetComponent<Rigidbody2D>(); }
+        if (animator == null) { animator = GetComponent<Animator>(); }
 
         StatusInit();
     }
@@ -64,6 +66,7 @@ public class P2DPlayerController : MonoBehaviour
 
     private void Update()
     {
+        animator.SetFloat("HorizontalVelocity", rb.velocity.y);
         // Check if Controller is enabled
         if (!enableControl) return;
 
@@ -74,14 +77,16 @@ public class P2DPlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        
         if (!jumpBtnDown && !isJumping) { return; }
         if (jumpHoldTimer > 0f)
         {
             rb.AddForce(new Vector2(rb.velocity.x, jumpHoldForce), ForceMode2D.Force);
-            jumpHoldTimer -= Time.deltaTime;
+            jumpHoldTimer -= Time.fixedDeltaTime;
         }
         else
         {
+            
             isJumping = false;
         }
     }
@@ -97,7 +102,16 @@ public class P2DPlayerController : MonoBehaviour
         float horizontalMove = Input.GetAxis("Horizontal");
         rb.velocity = new Vector2(horizontalMove * walkSpeed, rb.velocity.y);
 
-        if (rb.velocity.y < 0.1) // Apply custom Fall Speed
+        if (rb.velocity.x > 0)
+        {
+            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, 1);
+        }else if (rb.velocity.x < 0)
+        {
+            transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, 1);
+        }
+
+
+        if (rb.velocity.y < 0) // Apply custom Fall Speed
         {
             rb.velocity += Vector2.up * Physics2D.gravity.y * (fallSpeed - 1) * Time.deltaTime;
         }
@@ -130,6 +144,7 @@ public class P2DPlayerController : MonoBehaviour
         }
         if (Input.GetButtonUp("Jump"))
         {
+            rb.velocity = Vector2.zero;
             jumpBtnDown = false;
             isJumping = false;
         }
